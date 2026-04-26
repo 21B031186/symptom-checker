@@ -293,15 +293,7 @@ with tab_ai:
         st.markdown("#### Tell us how you feel")
         st.caption("You can write in English or Russian.")
 
-        env_key = os.getenv("OPENAI_API_KEY", "")
-        if env_key:
-            api_key = env_key
-        else:
-            api_key = st.text_input(
-                "API Key", type="password",
-                placeholder="Enter your OpenAI key…",
-                label_visibility="collapsed",
-            )
+        api_key = os.getenv("OPENAI_API_KEY", "")
 
         description = st.text_area(
             label="Description",
