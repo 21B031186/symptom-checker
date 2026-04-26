@@ -293,7 +293,7 @@ with tab_ai:
         st.markdown("#### Tell us how you feel")
         st.caption("You can write in English or Russian.")
 
-        api_key = os.getenv("OPENAI_API_KEY", "")
+        api_key = st.secrets.get("OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
 
         description = st.text_area(
             label="Description",
