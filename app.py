@@ -6,7 +6,6 @@ import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
-import shap
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -113,15 +112,8 @@ def load_features():
         return json.load(f)
 
 
-@st.cache_resource(show_spinner="Starting up…")
-def load_explainer(_model, n_features):
-    bg = np.zeros((1, n_features))
-    return shap.KernelExplainer(_model.predict_proba, bg, silent=True)
-
-
-model       = load_model()
+model        = load_model()
 feature_cols = load_features()
-explainer   = load_explainer(model, len(feature_cols))
 
 
 # ── OpenAI extraction ─────────────────────────────────────────────────────────
@@ -193,9 +185,10 @@ def render_results(symptoms: list[str]):
     st.markdown("#### What's driving this result?")
     st.caption("Symptoms highlighted in red increased the likelihood of this condition.")
 
-    with st.spinner("Analysing…"):
-        sv      = explainer.shap_values(x, nsamples=100)
-        sv_cls  = sv[0, :, pred_idx]
+    # For MultinomialNB: contribution of symptom i to class c =
+    # x_i * log P(feature_i | c)  (exact attribution, no approximation needed)
+    log_probs = model.feature_log_prob_[pred_idx]   # shape: (n_features,)
+    sv_cls    = x[0] * log_probs                    # zero-out absent symptoms
 
     top_n   = 12
     abs_idx = np.argsort(np.abs(sv_cls))[::-1][:top_n]
