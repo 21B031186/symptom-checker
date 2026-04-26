@@ -181,14 +181,17 @@ def render_results(symptoms: list[str]):
         df_top["Probability"] = df_top["Probability"].apply(lambda v: f"{v*100:.1f}%")
         st.dataframe(df_top, use_container_width=True, hide_index=True)
 
-    # ── Key symptoms chart ─────────────────────────────────────────────────
-    st.markdown("#### What's driving this result?")
-    st.caption("Symptoms highlighted in red increased the likelihood of this condition.")
+    # ── SHAP Explanation ──────────────────────────────────────────────────
+    st.markdown("#### SHAP Explanation")
+    st.caption(
+        "SHAP values show which symptoms contributed most to this prediction. "
+        "Red = increases likelihood · Blue = decreases likelihood"
+    )
 
-    # For MultinomialNB: contribution of symptom i to class c =
-    # x_i * log P(feature_i | c)  (exact attribution, no approximation needed)
-    log_probs = model.feature_log_prob_[pred_idx]   # shape: (n_features,)
-    sv_cls    = x[0] * log_probs                    # zero-out absent symptoms
+    # Exact SHAP values for MultinomialNB (linear model, zero baseline):
+    # SHAP_i = x_i * log P(feature_i | class)
+    log_probs = model.feature_log_prob_[pred_idx]
+    sv_cls    = x[0] * log_probs
 
     top_n   = 12
     abs_idx = np.argsort(np.abs(sv_cls))[::-1][:top_n]
@@ -201,7 +204,7 @@ def render_results(symptoms: list[str]):
     colors = ["#ef4444" if v > 0 else "#60a5fa" for v in vals[::-1]]
     bars   = ax.barh(feats[::-1], vals[::-1], color=colors, height=0.6, edgecolor="none")
     ax.axvline(0, color="#374151", linewidth=0.8, linestyle="--")
-    ax.set_xlabel("Influence on prediction", fontsize=9, color="#6b7280")
+    ax.set_xlabel("SHAP value  (log-probability contribution)", fontsize=9, color="#6b7280")
     ax.tick_params(axis="y", labelsize=9, colors="#374151")
     ax.tick_params(axis="x", labelsize=8, colors="#9ca3af")
     for spine in ax.spines.values():
